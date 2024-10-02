@@ -1,4 +1,4 @@
-import {lerp} from "../utils.js";
+import {lerp, get_intersection} from "../utils.js";
 
 export default class Sensor {
 	constructor(car) {
@@ -32,7 +32,23 @@ export default class Sensor {
     }
 
     #get_readings(ray, road_borders) {
-        return 0;
+        let touches = [];
+
+
+        for (let i = 0; i < road_borders.length; i++) {
+            const touch = get_intersection(ray[0], ray[0], road_borders[i][0], road_borders[i][1]);
+            if (touch) {
+                touches.push(touch);
+            }
+        }
+
+        if (touches.length == 0) {
+            return null;
+        } else {
+            const offsets = touches.map(e => e.offset);
+            const min_offset = Math.min(...offsets);
+            return touches.find(e => e.offset == min_offset);
+        }
     }
 
 	update(road_borders) {
@@ -48,11 +64,24 @@ export default class Sensor {
 
     draw(context) {
         for (let i = 0; i < this.rays.length; i++) {
+            let end = this.rays[i][1];
+
+            if (this.readings[i]) {
+                end = this.readings[i];
+            }
+
             context.beginPath();
             context.lineWidth = 2;
             context.strokeStyle = "yellow";
             context.moveTo(this.rays[i][0].x, this.rays[i][0].y);
-            context.lineTo(this.rays[i][1].x, this.rays[i][1].y);
+            context.lineTo(end.x, end.y);
+            context.stroke();
+
+            context.beginPath();
+            context.lineWidth = 2;
+            context.strokeStyle = "black";
+            context.moveTo(this.rays[i][1].x, this.rays[i][1].y);
+            context.lineTo(end.x, end.y);
             context.stroke();
         }
     }
